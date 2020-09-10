@@ -4,7 +4,7 @@ Will guess what spell type to use based on main/sub jobs, will update at job cha
 It can account for weather and day effects, by default this is off.  
 Filters spells available then chooses from them based on order: Thunder > Ice > Wind > Fire > Water > Earth > Dark > Light  
 If day or weather is on it will choose the spell benefited by the day/weather if available in the SC properties.  
-Will automatically change targets to the one the SC effect was most recently applied to, this can go horribly awry if you have multiple mobs being SC'd at once. (Toggle to turn this off incoming probably).  
+Will automatically change targets to the one the SC effect was most recently applied to, this can go horribly awry if you have multiple mobs being SC'd at once.  
 Does not (yet) handle BPs, but that may be added if I start playing smn seriously.  
  
 automb on | off  
