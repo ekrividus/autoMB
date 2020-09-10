@@ -67,6 +67,8 @@ defaults.cast_type = 'spell' -- Type of MB spell|jutsu|helix|ga|ja|ra
 defaults.cast_tier = 1 -- What tier should we try to cast
 defaults.step_down = 0 -- Step down a tier for double bursts (0: Never, 1: If target changed, 2: Always)
 defaults.gearswap = false -- Tell gearswap when we're bursting
+defaults.change_target = true -- Swap targets automatically for MBs
+
 settings = config.load(defaults)
 
 local skillchains = {
@@ -415,7 +417,10 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		return
 	end
 
-	local target_delay = set_target(target)
+	local target_delay = 0
+	if (settings.change_target) then
+		target_delay = set_target(target)
+	end
 
 	local spell = get_spell(skillchain, last_spell, second_burst, target_delay >= 1)
 
@@ -441,7 +446,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		return
 	end
 	
-	local cast_delay = math.random(0, settings.cast_delay) + 0.1
+	local cast_delay = math.random(0, settings.cast_delay)
 	coroutine.schedule(cast_spell:prepare(spell, target), target_delay + cast_delay)
 
 	if (settings.double_burst and not second_burst) then
@@ -451,7 +456,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		coroutine.schedule(do_burst:prepare(target, skillchain, true, spell), d)
 	else
 		local cast_time = res.spells:with('name', spell).cast_time
-		local d = cast_time + target_delay + ability_delay
+		local d = cast_time + target_delay
 		coroutine.schedule(finish_burst, d)
 	end
 end
@@ -734,6 +739,12 @@ windower.register_event('addon command', function(...)
 		message("Will "..(settings.gearswap and '' or ' not ').."use 'gs c bursting' and 'gs c notbursting'")
 		settings:save()
 		return
+	elseif (cmd == 'target' or 'tgt') then
+		if (settings.change_target == nil) then
+			settings.change_target = false
+		end
+		settings.change_target = not settings.change_target
+		settings:save()
 	elseif (cmd == 'debug') then
 		settings.debug = not settings.debug
 		message("Will "..(settings.debug and '' or ' not ').."show debug information")
