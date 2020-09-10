@@ -23,4 +23,5 @@ automb stepdown | sd - stepdown spell tier for second spell of double burst (abo
 automb weather - will adjust spell to account for weather  
 automb day - will adjust spell to account for day  
 automb (tog)gle [all | elements | weather | spell]][on | off | toggle] - will toggle showing various information per skillchain detected and spell attempt  
-automb gearswap | gs - will toggle sending 'gs c bursting' and 'gs c notbursting' commands for gearswap
+automb gearswap | gs - will toggle sending 'gs c bursting' and 'gs c notbursting' commands for gearswap  
+automb target | tgt - toggle auto target swapping for MBs
