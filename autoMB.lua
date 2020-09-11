@@ -159,10 +159,11 @@ local finish_act = L{2,3,5}
 local start_act = L{7,8,9,12}
 local is_busy = 0
 local is_casting = false
+local is_bursting = false
 
-local ability_delay = 1.5
+local ability_delay = 1.3
 local after_cast_delay = 2
-local faild_cast_delay = 2
+local failed_cast_delay = 2
 
 function message(text, to_log) 
 	if (text == nil or #text < 1) then
@@ -446,7 +447,8 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		return
 	end
 	
-	local cast_delay = math.random(0, settings.cast_delay)
+	is_bursting = true
+	local cast_delay = math.random(0.1, settings.cast_delay)
 	coroutine.schedule(cast_spell:prepare(spell, target), target_delay + cast_delay)
 
 	if (settings.double_burst and not second_burst) then
@@ -462,6 +464,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 end
 
 function finish_burst()
+	is_bursting = false
 	clear_skillchain()
 	windower.send_command('gs c notbursting')
 end
@@ -499,11 +502,16 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 				is_casting = true
 			elseif param == 28787 then              -- Failed Casting/WS/Item/Range
 				is_casting = false
-				is_busy = faild_cast_delay
+				is_busy = failed_cast_delay
 			end
 		end
 	end
 
+	if (is_bursting or is_casting or is_busy > 0) then
+		return
+	end
+
+	-- Get ids of all current party member
 	for _, member in pairs (party) do
 		if (type(member) == 'table' and member.mob) then
 			party_ids:append(member.mob.id)
@@ -512,8 +520,9 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 
 	for _, target in pairs(actions_packet.targets) do
 		local t = windower.ffxi.get_mob_by_id(target.id)
-
+		-- Make sure the mob is claimed by our alliance then
 		if (party_ids:contains(t.claim_id)) then
+			-- Make sure the mob is a valid MB target
 			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < 22) then
 				for _, action in pairs(target.actions) do
 					if (action.add_effect_message > 287 and action.add_effect_message < 302) then
