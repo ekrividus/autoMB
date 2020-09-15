@@ -161,6 +161,7 @@ local is_busy = 0
 local is_casting = false
 local is_bursting = false
 
+local last_check_time = os.clock()
 local ability_delay = 1.3
 local after_cast_delay = 2
 local failed_cast_delay = 2
@@ -470,6 +471,16 @@ function finish_burst()
 end
 
 --[[ Windower Events ]]--
+windower.register_event('prerender', function(...)
+	local time = os.clock()
+	local delta_time = time - last_check_time
+	last_check_time = time
+
+	if (is_busy > 0) then
+		is_busy = (is_busy - delta_time) < 0 and 0 or (is_busy - delta_time)
+	end
+end)
+
 -- Check for skillchain effects applied, this can get wonky if/when a group is skillchaining on multiple mobs at once
 windower.register_event('incoming chunk', function(id, packet, data, modified, is_injected, is_blocked)
 	if (id ~= 0x28 or not active) then
@@ -488,15 +499,8 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 		local category, param = data:unpack( 'b4b16', 11, 3)
 		local recast, targ_id = data:unpack('b32b32', 15, 7)
 		local effect, message = data:unpack('b17b10', 27, 6)
-		if category == 6 then                       -- Use Job Ability
-			is_busy = ability_delay
-		elseif category == 4 then                   -- Finish Casting
-			is_busy = after_cast_delay
-			is_casting = false
-		elseif finish_act:contains(category) then   -- Finish Range/WS/Item Use
-			is_busy = 0
-			is_casting = false
-		elseif start_act:contains(category) then
+		
+		if start_act:contains(category) then
 			if param == 24931 then                  -- Begin Casting/WS/Item/Range
 				is_busy = 0
 				is_casting = true
@@ -504,10 +508,19 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 				is_casting = false
 				is_busy = failed_cast_delay
 			end
+		elseif category == 6 then                   -- Use Job Ability
+			is_busy = ability_delay
+		elseif category == 4 then                   -- Finish Casting
+			is_busy = after_cast_delay
+			is_casting = false
+		elseif finish_act:contains(category) then   -- Finish Range/WS/Item Use
+			is_busy = 0
+			is_casting = false
 		end
 	end
 
 	if (is_bursting or is_casting or is_busy > 0) then
+		debug_message("Bursting: "..(is_bursting and "Yes" or "No").." Casting: "..(is_casting and "Yes" or "No").." Busy: "..is_busy.." second(s)")
 		return
 	end
 
