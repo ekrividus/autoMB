@@ -519,7 +519,7 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 		end
 	end
 
-	if (is_bursting or is_casting or is_busy > 0) then
+	if (is_casting or is_busy > 0) then
 		debug_message("Bursting: "..(is_bursting and "Yes" or "No").." Casting: "..(is_casting and "Yes" or "No").." Busy: "..is_busy.." second(s)")
 		return
 	end
@@ -531,10 +531,13 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 		end
 	end
 
+	local cur_t = windower.ffxi.get_mob_by_target('t')
+	local bt = windower.ffxi.get_mob_by_target('bt')
+	
 	for _, target in pairs(actions_packet.targets) do
 		local t = windower.ffxi.get_mob_by_id(target.id)
 		-- Make sure the mob is claimed by our alliance then
-		if (party_ids:contains(t.claim_id)) then
+		if ((cur_t and cur_t.id == t.id) or (bt and bt.id == t.id) or party_ids:contains(t.claim_id)) then
 			-- Make sure the mob is a valid MB target
 			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < 22) then
 				for _, action in pairs(target.actions) do
@@ -673,8 +676,8 @@ windower.register_event('addon command', function(...)
 		return
 	elseif (cmd == 'doubleburstdelay' or cmd == 'doubledelay' or cmd == 'dbldelay' or cmd == 'dbld') then
 		local n = tonumber(arg[2])
-		if (n == nil or n < 0) then
-			windower.add_to_chat(17, "Usage: autoMB doubleburstdelay #")
+		if (n == nil or n < -10 or n > 10) then
+			windower.add_to_chat(17, "Usage: autoMB doubleburstdelay [-10..10]")
 			return
 		end
 		settings.double_burst_delay = n
