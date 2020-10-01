@@ -243,7 +243,12 @@ function disabled()
 end
 
 function low_mp(spell)
-	local mp_cost = res.spells:with('name', spell).mp_cost
+	local sp = res.spells:with('name', spell)
+	if (sp == nil) then
+		return false
+	end
+
+	local mp_cost = sp.mp_cost
     if (mp_cost == nil or (player.vitals.mp - mp_cost <= settings.mp)) then
         return true
     end
