@@ -197,13 +197,11 @@ end
 
 function show_status()
 	message('Auto Bursts: \t\t'..(active and 'On' or 'Off'))
-	message('Magic Burst Type: \t'..settings.cast_type)
-	message('Magic Burst Tier: \t'..(settings.cast_tier))
+	message('Magic Burst Type: \t'..settings.cast_type..' Tier: \t'..(settings.cast_tier))
 	message('Min MP: \t\t'..settings.mp)
 	message('Cast Delay: '..settings.cast_delay..' seconds')
 	message('Double Burst: '..(settings.double_burst and ('On'..' delay '..settings.double_burst_delay..' seconds') or 'Off'))
-	message('Check Day Element: '..(settings.check_day and 'On' or 'Off'))
-	message('Check Weather Element: '..(settings.check_weather and 'On' or 'Off'))
+	message('Check Elements - Day: '..(settings.check_day and 'On' or 'Off')..' Weather: '..(settings.check_weather and 'On' or 'Off'))
 	message('Show Skillchain: \t\t'..(settings.show_skillchain and 'On' or 'Off'))
 	message('Show Skillchain Elements: \t'..(settings.show_elements and 'On' or 'Off'))
 	message('Show Day|Weather Elements: \t'..(settings.show_bonus_elements and 'On' or 'Off'))
@@ -622,11 +620,9 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'cast' or cmd == 'c') then
 		if (#arg < 2) then
 			windower.add_to_chat(17, "Usage: autoMB cast spell|helix|jutsu\nTells AutoMB what magic type to try to cast if the default is not what you want.")
-			return
 		end
 		if (T(cast_types):contains(arg[2]:lower())) then
 			settings.cast_type = arg[2]:lower()
-			return
 		end
 		settings:save()
 		return
@@ -690,10 +686,10 @@ windower.register_event('addon command', function(...)
 		return
 	elseif (cmd == 'weather') then
 		settings.check_weather = not settings.check_weather
-		message('Will'..settings.check_weather and ' ' or ' not '..'use current weather bonuses')
+		message('Will'..(settings.check_weather and ' ' or ' not ')..'use current weather bonuses')
 	elseif (cmd == 'day') then
 		settings.check_day = not settings.check_day
-		message('Will'..settings.check_day and ' ' or ' not '..'use current day bonuses')
+		message('Will'..(settings.check_day and ' ' or ' not ')..'use current day bonuses')
 	elseif (cmd == 'toggle' or cmd == 'tog') then
 		local what = 'all'
 		local toggle = 'toggle'
@@ -774,13 +770,11 @@ windower.register_event('addon command', function(...)
 			settings.change_target = false
 		end
 		settings.change_target = not settings.change_target
+		message("Auto target swapping "..(settings.change_target and 'enabled' or 'disabled')..".")
 		settings:save()
 	elseif (cmd == 'debug') then
 		settings.debug = not settings.debug
 		message("Will "..(settings.debug and '' or ' not ').."show debug information")
-
-		settings:save()
 		return
     end
-	show_help()
 end) -- Addon Command
