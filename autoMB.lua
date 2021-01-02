@@ -36,7 +36,7 @@ single bursting only for now, but double may me introduced later
 _addon.version = '0.7.0'
 _addon.name = 'autoMB'
 _addon.author = 'Ekrividus'
-_addon.commands = {'autoMB'}
+_addon.commands = {'autoMB','amb'}
 _addon.lastUpdate = '6/11/2020'
 _addon.windower = '4'
 
