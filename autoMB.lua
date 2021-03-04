@@ -765,7 +765,7 @@ windower.register_event('addon command', function(...)
 		message("Will "..(settings.gearswap and '' or ' not ').."use 'gs c bursting' and 'gs c notbursting'")
 		settings:save()
 		return
-	elseif (cmd == 'target' or 'tgt') then
+	elseif (cmd == 'target' or cmd == 'tgt') then
 		if (settings.change_target == nil) then
 			settings.change_target = false
 		end
