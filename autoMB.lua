@@ -69,7 +69,11 @@ defaults.step_down = 0 -- Step down a tier for double bursts (0: Never, 1: If ta
 defaults.gearswap = false -- Tell gearswap when we're bursting
 defaults.change_target = true -- Swap targets automatically for MBs
 
+-- Newly added setting
+defaults.disable_on_zone = false -- Disable when zoning
+
 settings = config.load(defaults)
+-- Add missing settings
 
 local skillchains = {
 	[288] = {id=288,english='Light',elements={'Light','Thunder','Wind','Fire'}},
@@ -430,7 +434,9 @@ function do_burst(target, skillchain, second_burst, last_spell)
 	local spell = get_spell(skillchain, last_spell, second_burst, target_delay >= 1)
 
 	if (spell == nil or spell == '') then
-		message("No spell found for burst!")
+		if (settings.show_spell) then
+			message("No spell found for burst!")
+		end
 		windower.send_command('gs c notbursting')
 		return
 	elseif (disabled()) then
@@ -554,6 +560,9 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	end
 end)
 
+windower.register_event('zone change', function()
+	config.load(defaults)
+end)
 -- Change spell type based on job/sub
 windower.register_event('job change', function(main_id, main_lvl, sub_id, sub_lvl)
 	local main = res.jobs[main_id].english_short
@@ -578,13 +587,15 @@ windower.register_event('job change', function(main_id, main_lvl, sub_id, sub_lv
 	message('> Cast type set to: '..settings.cast_type)
 end)
 
--- Stop checking if logout happens
+-- Stop checking if logout happens or zoning and disable on zone is true
 windower.register_event('logout', function(...)
 	windower.send_command('autoMB off')
 	player = nil
 	return
 end)
 
+windower.register_event('zone change')
+-- 
 -- Process incoming commands
 windower.register_event('addon command', function(...)
 	local cmd = 'help'
@@ -771,6 +782,10 @@ windower.register_event('addon command', function(...)
 		end
 		settings.change_target = not settings.change_target
 		message("Auto target swapping "..(settings.change_target and 'enabled' or 'disabled')..".")
+		settings:save()
+	elseif (cmd == 'zone' or cmd == 'z') then
+		settings.disable_on_zone = settings.disable_on_zone and (not settings.disable_on_zone) or true
+		message("Auto MB will be "..(settings.disable_on_zone and 'enabled' or 'disabled').." when zoning.")
 		settings:save()
 	elseif (cmd == 'debug') then
 		settings.debug = not settings.debug
