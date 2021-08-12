@@ -178,7 +178,7 @@ function message(text, to_log)
 	if (to_log) then
 		log(text)
 	else
-		windower.add_to_chat(17, _addon.name..": "..text)
+		windower.add_to_chat(207, _addon.name..": "..text)
 	end
 end
 
@@ -190,7 +190,7 @@ function debug_message(text, to_log)
 	if (to_log) then
 		log("(debug): "..text)
 	else
-		windower.add_to_chat(17, _addon.name.."(debug): "..text)
+		windower.add_to_chat(207, _addon.name.."(debug): "..text)
 	end
 end
 
@@ -389,7 +389,7 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 	if (settings.show_skillchain) then sc_info = sc_info..'Skillchain effect '..skillchain.english..' ' end
 	if (settings.show_elements) then sc_info = sc_info..'['..element_list..'] ' end
 	if (settings.show_bonus_elements) then sc_info = sc_info..'Weather: '.. weather_element..' Day: '..day_element..' ' end
-	if (settings.show_skillchain or settings.show_elements or settings.show_bonus_elements) then windower.add_to_chat(17, sc_info) end
+	if (settings.show_skillchain or settings.show_elements or settings.show_bonus_elements) then windower.add_to_chat(207, sc_info) end
 
 	return spell
 end -- get_spell()
@@ -463,11 +463,19 @@ function do_burst(target, skillchain, second_burst, last_spell)
 
 	if (settings.double_burst and not second_burst) then
 		debug_message("Setting up double burst")
-		local cast_time = res.spells:with('name', spell).cast_time
+		local cast_time = res.spells:with('name', spell) and res.spells:with('name', spell).cast_time or nil
+		if (cast_time == nil) then
+			finish_burst()
+			return
+		end
 		local d = cast_time + settings.double_burst_delay + target_delay + 2
 		coroutine.schedule(do_burst:prepare(target, skillchain, true, spell), d)
 	else
-		local cast_time = res.spells:with('name', spell).cast_time
+		local cast_time = res.spells:with('name', spell) and res.spells:with('name', spell).cast_time or nil
+		if (cast_time == nil) then
+			finish_burst()
+			return
+		end
 		local d = cast_time + target_delay
 		coroutine.schedule(finish_burst, d)
 	end
@@ -546,7 +554,7 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	for _, target in pairs(actions_packet.targets) do
 		local t = windower.ffxi.get_mob_by_id(target.id)
 		-- Make sure the mob is claimed by our alliance then
-		if ((cur_t and cur_t.id == t.id) or (bt and bt.id == t.id) or party_ids:contains(t.claim_id)) then
+		if (t ~= nil and ((cur_t and cur_t.id == t.id) or (bt and bt.id == t.id) or party_ids:contains(t.claim_id))) then
 			-- Make sure the mob is a valid MB target
 			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < 22) then
 				for _, action in pairs(target.actions) do
@@ -619,18 +627,18 @@ windower.register_event('addon command', function(...)
 		show_status()
 		return
 	elseif (cmd == 'on') then
-		windower.add_to_chat(17, 'AutoMB activating')
+		windower.add_to_chat(207, 'AutoMB activating')
 		player = windower.ffxi.get_player()
 		active = true
 		last_check_time = os.clock()
         return
     elseif (cmd == 'off') then
-        windower.add_to_chat(17, 'AutoMB deactivating')
+        windower.add_to_chat(207, 'AutoMB deactivating')
         active = false
 		return
 	elseif (cmd == 'cast' or cmd == 'c') then
 		if (#arg < 2) then
-			windower.add_to_chat(17, "Usage: autoMB cast spell|helix|jutsu\nTells AutoMB what magic type to try to cast if the default is not what you want.")
+			windower.add_to_chat(207, "Usage: autoMB cast spell|helix|jutsu\nTells AutoMB what magic type to try to cast if the default is not what you want.")
 		end
 		if (T(cast_types):contains(arg[2]:lower())) then
 			settings.cast_type = arg[2]:lower()
@@ -639,7 +647,7 @@ windower.register_event('addon command', function(...)
 		return
 	elseif (cmd == 'tier' or cmd == 't') then
 		if (#arg < 2) then
-			windower.add_to_chat(17, "Usage: tier 1~6\nTells autoMB what tier spell to use for Ninjutsu 1~3 will become ichi|ni|san.")
+			windower.add_to_chat(207, "Usage: tier 1~6\nTells autoMB what tier spell to use for Ninjutsu 1~3 will become ichi|ni|san.")
 			return
 		end
 		local t = tonumber(arg[2])
@@ -658,7 +666,7 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'mp') then
 		local n = tonumber(arg[2])
 		if (n == nil or n < 0) then
-			windower.add_to_chat(17, "Usage: autoMB mp #")
+			windower.add_to_chat(207, "Usage: autoMB mp #")
 			return
 		end
 		settings.mp = n
@@ -667,7 +675,7 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'delay' or cmd == 'd') then
 		local n = tonumber(arg[2])
 		if (n == nil or n < 0) then
-			windower.add_to_chat(17, "Usage: autoMB delay #")
+			windower.add_to_chat(207, "Usage: autoMB delay #")
 			return
 		end
 		settings.cast_delay = n
@@ -676,7 +684,7 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'frequency' or cmd == 'f') then
 		local n = tonumber(arg[2])
 		if (n == nil or n < 0) then
-			windower.add_to_chat(17, "Usage: autoMB (f)requency #")
+			windower.add_to_chat(207, "Usage: autoMB (f)requency #")
 			return
 		end
 		settings.frequency = n
@@ -689,7 +697,7 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'doubleburstdelay' or cmd == 'doubledelay' or cmd == 'dbldelay' or cmd == 'dbld') then
 		local n = tonumber(arg[2])
 		if (n == nil or n < -10 or n > 10) then
-			windower.add_to_chat(17, "Usage: autoMB doubleburstdelay [-10..10]")
+			windower.add_to_chat(207, "Usage: autoMB doubleburstdelay [-10..10]")
 			return
 		end
 		settings.double_burst_delay = n
@@ -720,7 +728,7 @@ windower.register_event('addon command', function(...)
 			else
 				settings.show_skillchain = (toggle == 'on')
 			end
-			windower.add_to_chat(17, 'AutoMB: Skillchain info will be '..(settings.show_skillchain == true and 'shown' or 'hidden'))
+			windower.add_to_chat(207, 'AutoMB: Skillchain info will be '..(settings.show_skillchain == true and 'shown' or 'hidden'))
         end
 		
 		if (what == 'elements' or what == 'element' or what == 'all') then
@@ -729,7 +737,7 @@ windower.register_event('addon command', function(...)
 			else
 				settings.show_elements = (toggle == 'on')
 			end
-			windower.add_to_chat(17, 'AutoMB: Skillchain element info will be '..(settings.show_elements == true and 'shown' or 'hidden'))
+			windower.add_to_chat(207, 'AutoMB: Skillchain element info will be '..(settings.show_elements == true and 'shown' or 'hidden'))
         end
 
 		if (what == 'weather' or what == 'bonus' or what == 'all') then
@@ -738,7 +746,7 @@ windower.register_event('addon command', function(...)
 			else
 				settings.show_bonus_elements = (toggle == 'on')
 			end
-			windower.add_to_chat(17, 'AutoMB: Day/Weather element info will be '..(settings.show_bonus_elements == true and 'shown' or 'hidden'))
+			windower.add_to_chat(207, 'AutoMB: Day/Weather element info will be '..(settings.show_bonus_elements == true and 'shown' or 'hidden'))
         end
 
 		if (what == 'spell' or what == 'sp' or what == 'all') then
@@ -747,7 +755,7 @@ windower.register_event('addon command', function(...)
 			else
 				settings.show_spell = (toggle == 'on')
 			end
-			windower.add_to_chat(17, 'AutoMB: Spell info will be '..(settings.show_spell == true and 'shown' or 'hidden'))
+			windower.add_to_chat(207, 'AutoMB: Spell info will be '..(settings.show_spell == true and 'shown' or 'hidden'))
 		end
 
 		settings:save()
