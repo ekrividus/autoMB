@@ -75,7 +75,7 @@ defaults.disable_on_zone = false -- Disable when zoning
 settings = config.load(defaults)
 -- Add missing settings
 
-local skillchains = {
+local skillchains = T{
 	[288] = {id=288,english='Light',elements={'Light','Thunder','Wind','Fire'}},
 	[289] = {id=289,english='Darkness',elements={'Dark','Ice','Water','Earth'}},
 	[290] = {id=290,english='Gravitation',elements={'Dark','Earth'}},
@@ -89,7 +89,11 @@ local skillchains = {
 	[298] = {id=298,english='Transfixion', elements={'Light'}},
 	[299] = {id=299,english='Scission',elements={'Earth'}},
 	[300] = {id=300,english='Detonation',elements={'Wind'}},
-	[301] = {id=301,english='Impaction',elements={'Thunder'}}
+	[301] = {id=301,english='Impaction',elements={'Thunder'}},
+	[767] = {id=767,english='Radiance',elements={'Light','Thunder','Wind','Fire'}},
+	[768] = {id=768,english='Umbra',elements={'Dark','Ice','Water','Earth'}},
+	[769] = {id=769,english='Radiance',elements={'Light','Thunder','Wind','Fire'}},
+	[770] = {id=770,english='Umbra',elements={'Dark','Ice','Water','Earth'}},
 }
 
 local magic_tiers = {
@@ -353,7 +357,22 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 
 		local recast = check_recast(spell)
 		if (recast > 0) then
-			spell = ''
+			if (settings.step_down == 2 and tier > 1) then
+				spell = elements[spell_element][settings.cast_type]
+				while (tier > 1) do
+					tier = tier - 1
+					tier = (tier >= 1 and tier or 1)
+					spell = spell..(settings.cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
+					spell = spell..(settings.cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+					recast = check_recast(spell)
+					if (not recast or recast <= 0) then
+						break
+					end
+					spell = ''
+				end
+			else
+				spell = ''
+			end
 		end
 	end
 
@@ -558,7 +577,7 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 			-- Make sure the mob is a valid MB target
 			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < 22) then
 				for _, action in pairs(target.actions) do
-					if (action.add_effect_message > 287 and action.add_effect_message < 302) then
+					if (skillchains[action.add_effect_message]) then
 						last_skillchain = skillchains[action.add_effect_message]
 						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
 					end
