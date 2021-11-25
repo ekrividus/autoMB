@@ -68,12 +68,14 @@ defaults.cast_tier = 1 -- What tier should we try to cast
 defaults.step_down = 0 -- Step down a tier for double bursts (0: Never, 1: If target changed, 2: Always)
 defaults.gearswap = false -- Tell gearswap when we're bursting
 defaults.change_target = true -- Swap targets automatically for MBs
+defaults.cast_range = 22 -- Maximum range for target to be recognized
 
 -- Newly added setting
 defaults.disable_on_zone = false -- Disable when zoning
 
 settings = config.load(defaults)
 -- Add missing settings
+settings.cast_range  = settings.cast_range or 22
 
 local skillchains = T{
 	[288] = {id=288,english='Light',elements={'Light','Thunder','Wind','Fire'}},
@@ -575,14 +577,19 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 		-- Make sure the mob is claimed by our alliance then
 		if (t ~= nil and ((cur_t and cur_t.id == t.id) or (bt and bt.id == t.id) or party_ids:contains(t.claim_id))) then
 			-- Make sure the mob is a valid MB target
-			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < 22) then
+			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < settings.cast_range) then
 				for _, action in pairs(target.actions) do
 					if (skillchains[action.add_effect_message]) then
+						debug_message("Skillchain effect detected on "..t.name)
 						last_skillchain = skillchains[action.add_effect_message]
 						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
 					end
 				end
+			else
+				debug_message("MB Target out of range, max range: "..settings.cast_range)
 			end
+		else
+			debug_message("MB Target is not claimed by party or alliance")
 		end
 	end
 end)
@@ -681,6 +688,14 @@ windower.register_event('addon command', function(...)
 		end
 		settings:save()
 		message("Cast Tier set to: "..t.." ["..(settings.cast_type == 'jutsu' and jutsu_tiers[settings.cast_tier].suffix or magic_tiers[settings.cast_tier].suffix).."]")
+		return
+	elseif (cmd == 'range' or cmd == 'rng') then
+		if (#arg < 2) then
+			windower.add_to_chat(207, "Usage: autoMB ##\nTells AutoMB what the max cast range to target is (default is 22).")
+		end
+
+		settings.cast_range = arg[2]:lower() or 22
+		settings:save()
 		return
 	elseif (cmd == 'mp') then
 		local n = tonumber(arg[2])
