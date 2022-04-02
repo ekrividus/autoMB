@@ -353,7 +353,9 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 	if (elements[spell_element] ~= nil and elements[spell_element][settings.cast_type] ~= nil) then
 		spell = elements[spell_element][settings.cast_type]
 
-		tier = (tier >= 1 and tier or 1)
+		tier = tier >= 1 and tier or 1
+		tier = settings.cast_type == 'jutsu' and tier > 3 and 3 or tier
+
 		spell = spell..(settings.cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
 		spell = spell..(settings.cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
 
@@ -575,21 +577,25 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	for _, target in pairs(actions_packet.targets) do
 		local t = windower.ffxi.get_mob_by_id(target.id)
 		-- Make sure the mob is claimed by our alliance then
-		if (t ~= nil and ((cur_t and cur_t.id == t.id) or (bt and bt.id == t.id) or party_ids:contains(t.claim_id))) then
-			-- Make sure the mob is a valid MB target
-			if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < settings.cast_range) then
-				for _, action in pairs(target.actions) do
-					if (skillchains[action.add_effect_message]) then
-						debug_message("Skillchain effect detected on "..t.name)
-						last_skillchain = skillchains[action.add_effect_message]
-						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
-					end
+		if (t == nil) then
+			debug_message("No target from packet")
+			return
+		end
+		if  (not party_ids:contains(t.claim_id)) then
+			debug_message("Mob is not claimed by your party/alliance.")
+			return
+		end
+		-- Make sure the mob is a valid MB target
+		if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < settings.cast_range) then
+			for _, action in pairs(target.actions) do
+				if (skillchains[action.add_effect_message]) then
+					debug_message("Skillchain effect detected on "..t.name)
+					last_skillchain = skillchains[action.add_effect_message]
+					coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
 				end
-			else
-				debug_message("MB Target out of range, max range: "..settings.cast_range)
 			end
 		else
-			debug_message("MB Target is not claimed by party or alliance")
+			debug_message("MB Target out of range, max range: "..settings.cast_range)
 		end
 	end
 end)
@@ -678,7 +684,7 @@ windower.register_event('addon command', function(...)
 		end
 		local t = tonumber(arg[2])
 		if (settings.cast_type == 'jutsu') then
-			if (settings.cast_tier > 0 and settings.cast_tier < 4) then
+			if (t > 0 and t < 4) then
 				settings.cast_tier = t
 			end
 		else
