@@ -33,11 +33,11 @@ job/level is pulled from game and appropriate elements are used
 single bursting only for now, but double may me introduced later
 
 ]]
-_addon.version = '0.7.0'
+_addon.version = '1.1.2'
 _addon.name = 'autoMB'
 _addon.author = 'Ekrividus'
 _addon.commands = {'autoMB','amb'}
-_addon.lastUpdate = '6/11/2020'
+_addon.lastUpdate = '4/2/2022'
 _addon.windower = '4'
 
 require 'tables'
@@ -207,6 +207,7 @@ end
 
 function show_status()
 	message('Auto Bursts: \t\t'..(active and 'On' or 'Off'))
+	message('Auto Burst Range: \t'..(settings.cast_range)..'y')
 	message('Magic Burst Type: \t'..settings.cast_type..' Tier: \t'..(settings.cast_tier))
 	message('Min MP: \t\t'..settings.mp)
 	message('Cast Delay: '..settings.cast_delay..' seconds')
@@ -575,27 +576,31 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	local bt = windower.ffxi.get_mob_by_target('bt')
 	
 	for _, target in pairs(actions_packet.targets) do
-		local t = windower.ffxi.get_mob_by_id(target.id)
-		-- Make sure the mob is claimed by our alliance then
-		if (t == nil) then
-			debug_message("No target from packet")
-			return
-		end
-		if  (not party_ids:contains(t.claim_id)) then
-			debug_message("Mob is not claimed by your party/alliance.")
-			return
-		end
-		-- Make sure the mob is a valid MB target
-		if (t and (t.is_npc and t.valid_target and not t.in_party and not t.charmed) and t.distance:sqrt() < settings.cast_range) then
-			for _, action in pairs(target.actions) do
-				if (skillchains[action.add_effect_message]) then
-					debug_message("Skillchain effect detected on "..t.name)
-					last_skillchain = skillchains[action.add_effect_message]
-					coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
+		for _, action in pairs(target.actions) do
+			if (skillchains[action.add_effect_message]) then
+				local t = windower.ffxi.get_mob_by_id(target.id)
+				-- Make sure the mob is claimed by our alliance then
+				if (t == nil) then
+					debug_message("No target from packet")
+					return
+				end
+				-- if  (not party_ids:contains(t.claim_id)) then
+				-- 	debug_message("Mob is not claimed by your party/alliance.")
+				-- 	return
+				-- end
+				-- Make sure the mob is a valid MB target
+				if (t.valid_target and t.is_npc) then
+					if (t.distance:sqrt() < settings.cast_range) then
+						debug_message("Skillchain effect detected on "..t.name)
+						last_skillchain = skillchains[action.add_effect_message]
+						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
+					else
+						debug_message("MB Target out of range, max range: "..settings.cast_range)
+					end
+				else
+					debug_message(t.name.." is not a valid target")
 				end
 			end
-		else
-			debug_message("MB Target out of range, max range: "..settings.cast_range)
 		end
 	end
 end)
@@ -700,7 +705,7 @@ windower.register_event('addon command', function(...)
 			windower.add_to_chat(207, "Usage: autoMB ##\nTells AutoMB what the max cast range to target is (default is 22).")
 		end
 
-		settings.cast_range = arg[2]:lower() or 22
+		settings.cast_range = tonumber(arg[2]) and tonumber(arg[2]) or 22
 		settings:save()
 		return
 	elseif (cmd == 'mp') then
