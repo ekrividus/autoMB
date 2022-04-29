@@ -576,31 +576,31 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	local bt = windower.ffxi.get_mob_by_target('bt')
 	
 	for _, target in pairs(actions_packet.targets) do
-		for _, action in pairs(target.actions) do
-			if (skillchains[action.add_effect_message]) then
-				local t = windower.ffxi.get_mob_by_id(target.id)
-				-- Make sure the mob is claimed by our alliance then
-				if (t == nil) then
-					debug_message("No target from packet")
-					return
-				end
-				-- if  (not party_ids:contains(t.claim_id)) then
-				-- 	debug_message("Mob is not claimed by your party/alliance.")
-				-- 	return
-				-- end
-				-- Make sure the mob is a valid MB target
-				if (t.valid_target and t.is_npc) then
+		local t = windower.ffxi.get_mob_by_id(target.id)
+		-- Make sure the mob is claimed by our alliance then
+		if (t == nil) then
+			debug_message("No target from packet")
+			return
+		end
+		-- if  (not party_ids:contains(t.claim_id)) then
+		-- 	debug_message("Mob is not claimed by your party/alliance.")
+		-- 	return
+		-- end
+		-- Make sure the mob is a valid MB target
+		if (t.valid_target and t.is_npc) then
+			for _, action in pairs(target.actions) do
+				if (skillchains[action.add_effect_message]) then
 					if (t.distance:sqrt() < settings.cast_range) then
 						debug_message("Skillchain effect detected on "..t.name)
 						last_skillchain = skillchains[action.add_effect_message]
 						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
 					else
-						debug_message("MB Target out of range, max range: "..settings.cast_range)
+						debug_message("MB Target out of range at "..t.distance:sqrt().." Max MB Range: "..settings.cast_range)
 					end
-				else
-					debug_message(t.name.." is not a valid target")
 				end
 			end
+		else
+			debug_message(t.name.." is not a valid target")
 		end
 	end
 end)
