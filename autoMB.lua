@@ -307,8 +307,28 @@ function clear_skillchain()
 end
 
 function cast_spell(spell_cmd, target) 
+	target = windower.ffxi.get_mob_by_id(target.id)
+	if (not target.valid_target) then
+		debug_message("Cast Spell: Target is no longer valid")
+		finish_burst()
+		return
+	end
+	if (not target.is_npc) then
+		debug_message("Cast Spell: Target is not an npc")
+		finish_burst()
+		return
+	end
+	if (target.hpp <= 0) then
+		debug_message("Cast Spell: Target is too dead already")
+		finish_burst()
+		return
+	end
+	
 	if (settings.show_spell) then
 		message("Casting - "..spell_cmd..' for the burst!')
+	end
+	if (settings.gearswap) then
+		windower.send_command('gs c bursting')
 	end
 	windower.send_command('input /ma "'..spell_cmd..'" <t>')
 end
@@ -442,11 +462,10 @@ function set_target(target)
 end
 
 function do_burst(target, skillchain, second_burst, last_spell) 
-	windower.send_command('gs c bursting')
-
 	player = windower.ffxi.get_player()
-	if (target == nil or not target.valid_target or target.hpp <= 0) then
-		message("Bad Target!")
+	if (target == nil or not target.is_npc or not target.valid_target or target.hpp <= 0) then
+		debug_message("Bad Target!")
+		finish_burst()
 		return
 	end
 
@@ -461,23 +480,15 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		if (settings.show_spell) then
 			message("No spell found for burst!")
 		end
-		windower.send_command('gs c notbursting')
+		finish_burst()
 		return
 	elseif (disabled()) then
 		message("Unable to cast, disabled!")
-		windower.send_command('gs c notbursting')
+		finish_burst()
 		return
 	elseif (low_mp(spell)) then
 		message("Not enough MP for MB!")
-		windower.send_command('gs c notbursting')
-		return
-	elseif (is_casting) then
-		debug_message("Casting, delaying for 0.5")
-		coroutine.schedule(do_burst:prepare(target, skillchain, second_burst, last_spell), 0.5)
-		return
-	elseif (is_busy > 0) then
-		debug_message("Busy for "..is_busy.." seconds, delaying MB")
-		coroutine.schedule(do_burst:prepare(target, skillchain, second_burst, last_spell), is_busy)
+		finish_burst()
 		return
 	end
 	
@@ -492,7 +503,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 			finish_burst()
 			return
 		end
-		local d = cast_time + settings.double_burst_delay + target_delay + 2
+		local d = cast_time + settings.double_burst_delay + target_delay + 1
 		coroutine.schedule(do_burst:prepare(target, skillchain, true, spell), d)
 	else
 		local cast_time = res.spells:with('name', spell) and res.spells:with('name', spell).cast_time or nil
@@ -507,8 +518,11 @@ end
 
 function finish_burst()
 	is_bursting = false
+	debug_message("Finished Burst, clearing chain and telling gearswap")
+	if (settings.gearswap) then
+		windower.send_command('gs c notbursting')
+	end
 	clear_skillchain()
-	windower.send_command('gs c notbursting')
 end
 
 --[[ Windower Events ]]--
@@ -560,7 +574,7 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 		end
 	end
 
-	if (is_casting or is_busy > 0) then
+	if (is_bursting) then
 		debug_message("Bursting: "..(is_bursting and "Yes" or "No").." Casting: "..(is_casting and "Yes" or "No").." Busy: "..is_busy.." second(s)")
 		return
 	end
@@ -574,33 +588,32 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 
 	local cur_t = windower.ffxi.get_mob_by_target('t')
 	local bt = windower.ffxi.get_mob_by_target('bt')
-	
+
 	for _, target in pairs(actions_packet.targets) do
 		local t = windower.ffxi.get_mob_by_id(target.id)
-		-- Make sure the mob is claimed by our alliance then
 		if (t == nil) then
 			debug_message("No target from packet")
 			return
 		end
-		-- if  (not party_ids:contains(t.claim_id)) then
-		-- 	debug_message("Mob is not claimed by your party/alliance.")
-		-- 	return
-		-- end
 		-- Make sure the mob is a valid MB target
 		if (t.valid_target and t.is_npc) then
 			for _, action in pairs(target.actions) do
 				if (skillchains[action.add_effect_message]) then
+					-- Don't MB targets that aren't claimed by us ... this might be meh
+					debug_message("Mob ("..t.name..") claim ID: "..t.claim_id.." in alliance? "..(party_ids:contains(t.claim_id) and "Yes" or "No"))
+					if  (not party_ids:contains(t.claim_id)) then
+						return
+					end
+					-- Don't MB targets too far away
 					if (t.distance:sqrt() < settings.cast_range) then
 						debug_message("Skillchain effect detected on "..t.name)
 						last_skillchain = skillchains[action.add_effect_message]
-						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay)
+						coroutine.schedule(do_burst:prepare(t, last_skillchain, false, '', 0), settings.cast_delay + is_busy)
 					else
-						debug_message("MB Target out of range at "..t.distance:sqrt().." Max MB Range: "..settings.cast_range)
+						debug_message("Target ("..t.name..") out of range "..t.distance:sqrt().."' Max MB Range: "..settings.cast_range.."'")
 					end
 				end
 			end
-		else
-			debug_message(t.name.." is not a valid target")
 		end
 	end
 end)
