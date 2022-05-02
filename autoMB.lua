@@ -50,7 +50,6 @@ chat = require('chat')
 packets = require('packets')
 
 defaults = T{}
-defaults.debug = false -- Show debug output
 defaults.frequency = 1 -- How many times per second to update skillchain effects
 defaults.show_skillchain = false -- Whether or not to show skillchain name
 defaults.show_elements = false -- Whether or not to show skillchain element info
@@ -175,6 +174,8 @@ local last_check_time = os.clock()
 local ability_delay = 1.3
 local after_cast_delay = 2
 local failed_cast_delay = 2
+
+local debug = false -- Show debug output
 
 function message(text, to_log) 
 	if (text == nil or #text < 1) then
@@ -854,8 +855,8 @@ windower.register_event('addon command', function(...)
 		message("Auto MB will be "..(settings.disable_on_zone and 'enabled' or 'disabled').." when zoning.")
 		settings:save()
 	elseif (cmd == 'debug') then
-		settings.debug = not settings.debug
-		message("Will "..(settings.debug and '' or ' not ').."show debug information")
+		debug = not debug
+		message("Will "..(debug and '' or ' not ').."show debug information")
 		return
     end
 end) -- Addon Command
