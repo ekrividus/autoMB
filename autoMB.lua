@@ -190,7 +190,7 @@ function message(text, to_log)
 end
 
 function debug_message(text, to_log) 
-	if (settings.debug == false or text == nil or #text < 1) then
+	if (debug == false or text == nil or #text < 1) then
 		return
 	end
 
