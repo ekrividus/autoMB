@@ -619,9 +619,6 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	end
 end)
 
-windower.register_event('zone change', function()
-	config.load(defaults)
-end)
 -- Change spell type based on job/sub
 windower.register_event('job change', function(main_id, main_lvl, sub_id, sub_lvl)
 	local main = res.jobs[main_id].english_short
@@ -647,13 +644,12 @@ windower.register_event('job change', function(main_id, main_lvl, sub_id, sub_lv
 end)
 
 -- Stop checking if logout happens or zoning and disable on zone is true
-windower.register_event('logout', function(...)
+windower.register_event('zone change', 'logout', function(...)
 	windower.send_command('autoMB off')
 	player = nil
 	return
 end)
 
-windower.register_event('zone change')
 -- 
 -- Process incoming commands
 windower.register_event('addon command', function(...)
@@ -694,6 +690,7 @@ windower.register_event('addon command', function(...)
 		if (T(cast_types):contains(arg[2]:lower())) then
 			settings.cast_type = arg[2]:lower()
 		end
+		windower.add_to_chat(207, "Cast Type set to "..settings.cast_type)
 		settings:save()
 		return
 	elseif (cmd == 'tier' or cmd == 't') then
@@ -711,8 +708,8 @@ windower.register_event('addon command', function(...)
 				settings.cast_tier = t
 			end		
 		end
-		settings:save()
 		message("Cast Tier set to: "..t.." ["..(settings.cast_type == 'jutsu' and jutsu_tiers[settings.cast_tier].suffix or magic_tiers[settings.cast_tier].suffix).."]")
+		settings:save()
 		return
 	elseif (cmd == 'range' or cmd == 'rng') then
 		if (#arg < 2) then
@@ -720,6 +717,7 @@ windower.register_event('addon command', function(...)
 		end
 
 		settings.cast_range = tonumber(arg[2]) and tonumber(arg[2]) or 22
+		windower.add_to_chat(207, "Cast Range set to "..settings.cast_range)
 		settings:save()
 		return
 	elseif (cmd == 'mp') then
@@ -729,6 +727,7 @@ windower.register_event('addon command', function(...)
 			return
 		end
 		settings.mp = n
+		windower.add_to_chat(207, "Cast Min MP set to "..settings.mp)
 		settings:save()
 		return
 	elseif (cmd == 'delay' or cmd == 'd') then
@@ -738,6 +737,7 @@ windower.register_event('addon command', function(...)
 			return
 		end
 		settings.cast_delay = n
+		windower.add_to_chat(207, "Cast Delay set to "..settings.cast_delay)
 		settings:save()
 		return
 	elseif (cmd == 'frequency' or cmd == 'f') then
@@ -747,10 +747,12 @@ windower.register_event('addon command', function(...)
 			return
 		end
 		settings.frequency = n
+		windower.add_to_chat(207, "Check Frequency set to "..settings.frequency)
 		settings:save()
 		return
 	elseif (cmd == 'doubleburst' or cmd == 'double' or cmd == 'dbl') then
 		settings.double_burst = not settings.double_burst
+		windower.add_to_chat(207, "Double Bursting set to "..settings.double_burst)
 		settings:save()
 		return
 	elseif (cmd == 'doubleburstdelay' or cmd == 'doubledelay' or cmd == 'dbldelay' or cmd == 'dbld') then
@@ -760,14 +762,19 @@ windower.register_event('addon command', function(...)
 			return
 		end
 		settings.double_burst_delay = n
+		windower.add_to_chat(207, "Double Burst Delay set to "..settings.double_burst_delay)
 		settings:save()
 		return
 	elseif (cmd == 'weather') then
 		settings.check_weather = not settings.check_weather
 		message('Will'..(settings.check_weather and ' ' or ' not ')..'use current weather bonuses')
+		settings:save()
+		return
 	elseif (cmd == 'day') then
 		settings.check_day = not settings.check_day
 		message('Will'..(settings.check_day and ' ' or ' not ')..'use current day bonuses')
+		settings:save()
+		return
 	elseif (cmd == 'toggle' or cmd == 'tog') then
 		local what = 'all'
 		local toggle = 'toggle'
@@ -831,8 +838,8 @@ windower.register_event('addon command', function(...)
 			settings.step_down = 0
 			txt = 'never'
 		end
-		settings:save()
 		message("Double burst Step Down set to "..txt)
+		settings:save()
 		return
 	elseif (cmd == 'gearswap' or cmd == 'gs') then
 		if (settings.gearswap) then
@@ -850,10 +857,12 @@ windower.register_event('addon command', function(...)
 		settings.change_target = not settings.change_target
 		message("Auto target swapping "..(settings.change_target and 'enabled' or 'disabled')..".")
 		settings:save()
+		return
 	elseif (cmd == 'zone' or cmd == 'z') then
 		settings.disable_on_zone = settings.disable_on_zone and (not settings.disable_on_zone) or true
 		message("Auto MB will be "..(settings.disable_on_zone and 'enabled' or 'disabled').." when zoning.")
 		settings:save()
+		return
 	elseif (cmd == 'debug') then
 		debug = not debug
 		message("Will "..(debug and '' or ' not ').."show debug information")
