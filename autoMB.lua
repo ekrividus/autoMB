@@ -752,7 +752,7 @@ windower.register_event('addon command', function(...)
 		return
 	elseif (cmd == 'doubleburst' or cmd == 'double' or cmd == 'dbl') then
 		settings.double_burst = not settings.double_burst
-		windower.add_to_chat(207, "Double Bursting set to "..settings.double_burst)
+		windower.add_to_chat(207, "Double Bursting set to "..(settings.double_burst and "True" or "False"))
 		settings:save()
 		return
 	elseif (cmd == 'doubleburstdelay' or cmd == 'doubledelay' or cmd == 'dbldelay' or cmd == 'dbld') then
