@@ -268,7 +268,7 @@ end
 
 function check_recast(spell_name)
     local recasts = windower.ffxi.get_spell_recasts()
-	local spell = res.spells:witn('en', spell_name)
+	local spell = res.spells:with('en', spell_name)
 	if (spell == nil) then
 		return 0
 	end
