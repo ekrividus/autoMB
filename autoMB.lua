@@ -253,7 +253,7 @@ function disabled()
 end
 
 function low_mp(spell)
-	local sp = res.spells:witn('en', spell)
+	local sp = res.spells:with('en', spell)
 	if (sp == nil) then
 		return false
 	end
@@ -499,7 +499,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 
 	if (settings.double_burst and not second_burst) then
 		debug_message("Setting up double burst")
-		local cast_time = res.spells:witn('en', spell) and res.spells:witn('en', spell).cast_time or nil
+		local cast_time = res.spells:with('en', spell) and res.spells:with('en', spell).cast_time or nil
 		if (cast_time == nil) then
 			finish_burst()
 			return
@@ -507,7 +507,7 @@ function do_burst(target, skillchain, second_burst, last_spell)
 		local d = cast_time + settings.double_burst_delay + target_delay + 1
 		coroutine.schedule(do_burst:prepare(target, skillchain, true, spell), d)
 	else
-		local cast_time = res.spells:witn('en', spell) and res.spells:witn('en', spell).cast_time or nil
+		local cast_time = res.spells:with('en', spell) and res.spells:with('en', spell).cast_time or nil
 		if (cast_time == nil) then
 			finish_burst()
 			return
