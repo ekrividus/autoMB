@@ -33,11 +33,11 @@ job/level is pulled from game and appropriate elements are used
 single bursting only for now, but double may me introduced later
 
 ]]
-_addon.version = '1.1.2'
+_addon.version = '1.3.2'
 _addon.name = 'autoMB'
 _addon.author = 'Ekrividus'
 _addon.commands = {'autoMB','amb'}
-_addon.lastUpdate = '4/2/2022'
+_addon.lastUpdate = '11/22/2022'
 _addon.windower = '4'
 
 require 'tables'
@@ -110,6 +110,17 @@ local jutsu_tiers = {
     [1] = {suffix='Ichi'},
     [2] = {suffix='Ni'},
     [3] = {suffix='San'}
+}
+
+local max_tiers = {
+	spell=6,
+	helix=2,
+	ga=3,
+	ja=1,
+	ra=3,
+	jutsu=3,
+	white=3,
+	holy=2,
 }
 
 local spell_priorities = {
@@ -339,7 +350,8 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 	local weather_element, day_element = get_bonus_elements()
 	local spell = ''
 	local step_down = 0
-
+	local cast_type = settings.cast_type
+	local tier = settings.cast_tier
 
 	debug_message('Getting Spell ...',true)
 	debug_message('Day Element: '..day_element,true)
@@ -350,7 +362,9 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 	end
 
 	if (second_burst) then
-		if (settings.step_down == 2 or (settings.step_down == 1 and target_change ~= nil and target_change > 0)) then
+		if (cast_type == 'ja') then
+			cast_type = 'spell'
+		elseif (settings.step_down == 2 or (settings.step_down == 1 and target_change ~= nil and target_change > 0)) then
 			step_down = 1
 		end
 	end
@@ -370,26 +384,30 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 
 	debug_message('Best Spell Element: '..spell_element,true)
 
-	local tier = settings.cast_tier - step_down
+	if (tier > max_tiers[cast_type]) then
+		tier = max_tiers[cast_type]
+	end
+	tier = (tier - step_down > 0 and (tier - step_down) or 1)
+	
 	-- Find spell/helix/jutsu that will be best based on best element
-	if (elements[spell_element] ~= nil and elements[spell_element][settings.cast_type] ~= nil) then
-		spell = elements[spell_element][settings.cast_type]
+	if (elements[spell_element] ~= nil and elements[spell_element][cast_type] ~= nil) then
+		spell = elements[spell_element][cast_type]
 
 		tier = tier >= 1 and tier or 1
-		tier = settings.cast_type == 'jutsu' and tier > 3 and 3 or tier
+		tier = cast_type == 'jutsu' and tier > 3 and 3 or tier
 
-		spell = spell..(settings.cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-		spell = spell..(settings.cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+		spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
+		spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
 
 		local recast = check_recast(spell)
 		if (recast > 0) then
 			if (settings.step_down == 2 and tier > 1) then
-				spell = elements[spell_element][settings.cast_type]
+				spell = elements[spell_element][cast_type]
 				while (tier > 1) do
 					tier = tier - 1
 					tier = (tier >= 1 and tier or 1)
-					spell = spell..(settings.cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-					spell = spell..(settings.cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+					spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
+					spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
 					recast = check_recast(spell)
 					if (not recast or recast <= 0) then
 						break
@@ -406,12 +424,14 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 
 	if (spell == nil or spell == '') then
 		for _,element in pairs(skillchain.elements) do
-			if (elements[element] ~= nil and elements[element][settings.cast_type] ~= nil) then
-				spell = elements[element][settings.cast_type]
+			if (elements[element] ~= nil and elements[element][cast_type] ~= nil) then
+				spell = elements[element][cast_type]
 
 				tier = (tier >= 1 and tier or 1)
-				spell = spell..(settings.cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-				spell = spell..(settings.cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+				spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
+				if (T{'spell', 'jutsu', 'ga'}:contains(cast_type)) then
+					spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+				end
 			
 				local recast = check_recast(spell)
 				if (recast == 0) then
@@ -653,7 +673,7 @@ end)
 -- 
 -- Process incoming commands
 windower.register_event('addon command', function(...)
-	local cmd = 'help'
+	local cmd = 'none'
 	if (#arg > 0) then
 		cmd = arg[1]
 	end
@@ -673,15 +693,21 @@ windower.register_event('addon command', function(...)
 	elseif (cmd == 'status' or cmd == 'show') then
 		show_status()
 		return
-	elseif (cmd == 'on') then
-		windower.add_to_chat(207, 'AutoMB activating')
+	elseif (cmd == "none") then
+		active = not active
+		windower.add_to_chat(207, 'AutoMB '..(acitve and 'activating' or 'deactivating'))
 		player = windower.ffxi.get_player()
-		active = true
 		last_check_time = os.clock()
         return
-    elseif (cmd == 'off') then
-        windower.add_to_chat(207, 'AutoMB deactivating')
+	elseif (T{"on","start","run","go"}:contains(cmd)) then
+		active = true
+		windower.add_to_chat(207, 'AutoMB activating')
+		player = windower.ffxi.get_player()
+		last_check_time = os.clock()
+        return
+    elseif (T{"on","start","run","go"}:contains(cmd)) then
         active = false
+        windower.add_to_chat(207, 'AutoMB deactivating')
 		return
 	elseif (cmd == 'cast' or cmd == 'c') then
 		if (#arg < 2) then

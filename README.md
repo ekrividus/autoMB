@@ -10,8 +10,10 @@ Will, optionally, change targets to the one the SC effect was most recently appl
 
 ---
 ## Commands:
-automb or amb - With no arguments will display help text
-### Arguments: 
+automb or amb - With no arguments will toggle active/inactive state
+
+---
+## Arguments: 
 * on | off  - Starts or stops the addon
 * help - will show help text  
 * status | show - will show information on current settings  
@@ -34,7 +36,7 @@ automb or amb - With no arguments will display help text
 
 ---
 ## TODO: 
+* -aja to tier V|VI elemental double nukes.
 * Dial in target changes, currently checked by claim IDs, BT, T but maybe should be done differently.
 * Blue magic handling, not that I know any blues that really bother with MBs anymore.
-* Avatar BPs, if there is a real outcry to support them.
-* Beast Pets, again if there is an outcry, I don't see it happening though.
+* SMN, PUP, and BST pets if there is an outcry. I don't see it happening though.
