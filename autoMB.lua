@@ -231,8 +231,8 @@ function show_status()
 	message('Show Spell: \t'..(settings.show_spell and 'On' or 'Off'))
 end
 
-function buff_active(id)
-    if T(windower.ffxi.get_player().buffs):contains(BuffID) == true then
+function buff_active(buff_id)
+    if T(windower.ffxi.get_player().buffs):contains(buff_id) == true then
         return true
     end
     return false
@@ -249,7 +249,7 @@ function disabled()
         return true
     elseif (buff_active(10)) then -- Stun
         return true
-    elseif (buff_active(14)) then -- Charm
+    elseif (buff_active(14) or buff_active(17)) then -- Charm
         return true
     elseif (buff_active(28)) then -- Terrorize
         return true
