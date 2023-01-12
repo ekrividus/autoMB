@@ -17,7 +17,7 @@ automb or amb - With no arguments will toggle active/inactive state
 * on | off  - Starts or stops the addon
 * help - will show help text  
 * status | show - will show information on current settings  
-* (c)ast <spelltype> - one of spell helix ga ra ja light jutsu holy  
+* (c)ast <spelltype> - one of: spell helix ga ra ja light jutsu holy  
 * (t)ier <casttier> - will accept any value, no checking for learned spells or appropriate tiers implemented  
 * range | rng <casttier> - the max cast range you want, if not set to a number will set it to default of 22'  
 * mp <amount> - will keep this much mp in reserve, if the spell to cast would drop you below this point it won't cast  

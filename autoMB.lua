@@ -33,11 +33,11 @@ job/level is pulled from game and appropriate elements are used
 single bursting only for now, but double may me introduced later
 
 ]]
-_addon.version = '1.3.2'
+_addon.version = '1.3.4'
 _addon.name = 'autoMB'
 _addon.author = 'Ekrividus'
 _addon.commands = {'autoMB','amb'}
-_addon.lastUpdate = '11/22/2022'
+_addon.lastUpdate = '1/12/2023'
 _addon.windower = '4'
 
 require 'tables'
@@ -50,7 +50,7 @@ chat = require('chat')
 packets = require('packets')
 
 defaults = T{}
-defaults.frequency = 1 -- How many times per second to update skillchain effects
+defaults.frequency = 4 -- How many times per second to update skillchain effects
 defaults.show_skillchain = false -- Whether or not to show skillchain name
 defaults.show_elements = false -- Whether or not to show skillchain element info
 defaults.show_bonus_elements = false -- Whether or not to show Storm/Weather/Day elements
@@ -74,7 +74,7 @@ defaults.disable_on_zone = false -- Disable when zoning
 
 settings = config.load(defaults)
 -- Add missing settings
-settings.cast_range  = settings.cast_range or 22
+settings.cast_range  = settings.cast_range or 21
 
 local skillchains = T{
 	[288] = {id=288,english='Light',elements={'Light','Thunder','Wind','Fire'}},
@@ -183,7 +183,7 @@ local is_bursting = false
 
 local last_check_time = os.clock()
 local ability_delay = 1.3
-local after_cast_delay = 2
+local after_cast_delay = 1.6
 local failed_cast_delay = 2
 
 local debug = false -- Show debug output
