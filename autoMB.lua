@@ -154,17 +154,17 @@ local storms = {
 }
 
 local elements = {
-	['Light'] = {spell=nil,helix='Luminohelix',ga=nil,ja=nil,ra=nil,jutsu=nil,white='Banish',holy="Holy"},
-	['Dark'] = {spell=nil,helix='Noctohelix',ga=nil,ja=nil,ra=nil,jutsu=nil,white=nil,holy=nil},
-	['Thunder'] = {spell='Thunder',helix='Ionohelix',ga='Thundaga',ja='Thundaja',ra='Thundara',jutsu='Raiton',white=nil,holy=nil},
-	['Ice'] = {spell='Blizzard',helix='Cryohelix',ga='Blizzaga',ja='Blizzaja',ra='Blizzara',jutsu='Hyoton',white=nil,holy=nil},
-	['Fire'] = {spell='Fire',helix='Pyrohelix',ga='Firaga',ja='Firaja',ra='Fira',jutsu='Katon',white=nil,holy=nil},
-	['Wind'] = {spell='Aero',helix='Anemohelix',ga='Aeroga',ja='Aeroja',ra='Aerora',jutsu='Huton',white=nil,holy=nil},
-	['Water'] = {spell='Water',helix='Hydrohelix',ga='Waterga',ja='Waterja',ra='Watera',jutsu='Suiton',white=nil,holy=nil},
-	['Earth'] = {spell='Stone',helix='Geohelix',ga='Stonega',ja='Stoneja',ra='Stonera',jutsu='Doton',white=nil,holy=nil},
+	['Light'] = {spell=nil,helix='Luminohelix',ga=nil,ja=nil,ra=nil,jutsu=nil,white='Banish',holy="Holy",drain=nil},
+	['Dark'] = {spell=nil,helix='Noctohelix',ga=nil,ja=nil,ra=nil,jutsu=nil,white=nil,holy=nil,drain="Drain"},
+	['Thunder'] = {spell='Thunder',helix='Ionohelix',ga='Thundaga',ja='Thundaja',ra='Thundara',jutsu='Raiton',white=nil,holy=nil,drain=nil},
+	['Ice'] = {spell='Blizzard',helix='Cryohelix',ga='Blizzaga',ja='Blizzaja',ra='Blizzara',jutsu='Hyoton',white=nil,holy=nil,drain=nil},
+	['Fire'] = {spell='Fire',helix='Pyrohelix',ga='Firaga',ja='Firaja',ra='Fira',jutsu='Katon',white=nil,holy=nil,drain=nil},
+	['Wind'] = {spell='Aero',helix='Anemohelix',ga='Aeroga',ja='Aeroja',ra='Aerora',jutsu='Huton',white=nil,holy=nil,drain=nil},
+	['Water'] = {spell='Water',helix='Hydrohelix',ga='Waterga',ja='Waterja',ra='Watera',jutsu='Suiton',white=nil,holy=nil,drain=nil},
+	['Earth'] = {spell='Stone',helix='Geohelix',ga='Stonega',ja='Stoneja',ra='Stonera',jutsu='Doton',white=nil,holy=nil,drain=nil},
 }
 
-local cast_types = {'spell', 'helix', 'ga', 'ja', 'ra', 'jutsu', 'white', 'holy'}
+local cast_types = {'spell', 'helix', 'ga', 'ja', 'ra', 'jutsu', 'white', 'holy', 'drain'}
 local spell_users = {'BLM', 'RDM', 'DRK', 'GEO'}
 local jutsu_users = {'NIN'}
 local helix_users = {'SCH'}
@@ -174,6 +174,9 @@ local frequency = 1/settings.frequency
 local last_skillchain = nil
 
 local player = nil
+
+local last_packet_time = 0
+local min_packet_time = 0.05
 
 local finish_act = L{2,3,5}
 local start_act = L{7,8,9,12}
@@ -408,14 +411,12 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 					tier = (tier >= 1 and tier or 1)
 					spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
 					spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
-					recast = check_recast(spell)
+					local recast = check_recast(spell)
 					if (not recast or recast <= 0) then
 						break
 					end
-					spell = ''
+					spell = nil
 				end
-			else
-				spell = ''
 			end
 		end
 	end
@@ -429,9 +430,7 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 
 				tier = (tier >= 1 and tier or 1)
 				spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-				if (T{'spell', 'jutsu', 'ga'}:contains(cast_type)) then
-					spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
-				end
+				spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
 			
 				local recast = check_recast(spell)
 				if (recast == 0) then
@@ -562,7 +561,12 @@ windower.register_event('incoming chunk', function(id, packet, data, modified, i
 	if (id ~= 0x28 or not active) then
 		return
 	end
-	
+	local now = os.clock()
+	if (now < last_packet_time + min_packet_time) then
+		return
+	end
+	last_packet_time = now
+
 	local actions_packet = windower.packets.parse_action(packet)
 	local mob_array = windower.ffxi.get_mob_array()
 	local valid = false
@@ -652,13 +656,13 @@ windower.register_event('job change', function(main_id, main_lvl, sub_id, sub_lv
 	elseif (T(jutsu_users):contains(main)) then
 		settings.cast_type = 'jutsu'
 	elseif (T(helix_users):contains(main)) then
-		settings.cast_type = 'helix'
+		settings.cast_type = 'spell'
 	elseif (T(spell_users):contains(sub)) then
 		settings.cast_type = 'spell'
 	elseif (T(jutsu_users):contains(sub)) then
 		settings.cast_type = 'jutsu'
 	elseif (T(helix_users):contains(sub)) then
-		settings.cast_type = 'helix'
+		settings.cast_type = 'spell'
 	end
 	message('> Cast type set to: '..settings.cast_type)
 end)
