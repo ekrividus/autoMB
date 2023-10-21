@@ -50,7 +50,7 @@ chat = require('chat')
 packets = require('packets')
 
 defaults = T{}
-defaults.frequency = 4 -- How many times per second to update skillchain effects
+defaults.frequency = 10 -- How many times per second to update skillchain effects
 defaults.show_skillchain = false -- Whether or not to show skillchain name
 defaults.show_elements = false -- Whether or not to show skillchain element info
 defaults.show_bonus_elements = false -- Whether or not to show Storm/Weather/Day elements
@@ -777,7 +777,7 @@ windower.register_event('addon command', function(...)
 			return
 		end
 		settings.frequency = n
-		windower.add_to_chat(207, "Check Frequency set to "..settings.frequency)
+		windower.add_to_chat(207, "Check Frequency set to "..settings.frequency.." times per second")
 		settings:save()
 		return
 	elseif (cmd == 'doubleburst' or cmd == 'double' or cmd == 'dbl') then
