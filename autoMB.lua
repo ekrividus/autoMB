@@ -399,8 +399,7 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 		tier = tier >= 1 and tier or 1
 		tier = cast_type == 'jutsu' and tier > 3 and 3 or tier
 
-		spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-		spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+		spell = spell .. (cast_type == 'jutsu' and (': ' .. jutsu_tiers[tier].suffix or magic_tiers[tier].suffix) or (tier > 1 and ' ' or ''))
 
 		local recast = check_recast(spell)
 		if (recast > 0) then
@@ -409,8 +408,8 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 				while (tier > 1) do
 					tier = tier - 1
 					tier = (tier >= 1 and tier or 1)
-					spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-					spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+					spell = spell .. (cast_type == 'jutsu' and (': ' .. jutsu_tiers[tier].suffix or magic_tiers[tier].suffix) or (tier > 1 and ' ' or ''))
+
 					local recast = check_recast(spell)
 					if (not recast or recast <= 0) then
 						break
@@ -429,8 +428,7 @@ function get_spell(skillchain, last_spell, second_burst, target_change)
 				spell = elements[element][cast_type]
 
 				tier = (tier >= 1 and tier or 1)
-				spell = spell..(cast_type == 'jutsu' and ':' or '')..(tier > 1 and ' ' or '')
-				spell = spell..(cast_type == 'jutsu' and jutsu_tiers[tier].suffix or magic_tiers[tier].suffix)
+				spell = spell .. (cast_type == 'jutsu' and (': ' .. jutsu_tiers[tier].suffix or magic_tiers[tier].suffix) or (tier > 1 and ' ' or ''))
 			
 				local recast = check_recast(spell)
 				if (recast == 0) then
